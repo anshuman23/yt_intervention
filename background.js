@@ -1,56 +1,82 @@
-chrome.browserAction.onClicked.addListener(mainFunc);
+chrome.browserAction.onClicked.addListener(clickFunc);
 
-//function sleep(ms) {
-//    return new Promise(resolve => setTimeout(resolve, ms));
-//}
-
-function getHomepage() {
-    try {
-      document.getElementById('logo-icon').click()
-    }
-    catch (exception_var) {
-      window.location.replace('https://www.youtube.com/')
-    }
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 
-function getHomepageB(tab){
+function getHomepage(tab){
     console.log("Executing getHomepage function in background...");
-    chrome.tabs.executeScript(tab.id, "homepage")
-
-    videos = getVideos(tab);
-    return videos;
-
+    chrome.tabs.executeScript(tab.id, {file: "get_homepage.js"});
 }
 
-function getElementsByXPathHelper(xpath) {
-    var result = document.evaluate(xpath, document, null, XPathResult.ANY_TYPE, null);
-    return result;
-}
 
-function getVideos(tab) {
+function beginVideoCollection(tab) {
     console.log("Executing getVideos function in background...");
-    var videos = [];
-    var results = getElementsByXPathHelper(xpath);
-    while (node = results.iterateNext()) {
-        const a = node.getElementsByTagName('a')[0];
-        const href = a.getAttribute('href');
-        if (href && href.startsWith('https://www.youtube.com/watch?')) {
-            videos.push(href);
-            console.log(href);
-        }
-    }
+    chrome.tabs.executeScript(tab.id, {file: "get_videos.js"});
+}
 
-    return videos;
+function playVideo(vid_url) {
+    url_json = { link : String(vid_url) };
+    chrome.tabs.executeScript(null, {
+    code: 'var video_obj = ' + JSON.stringify(url_json)}, function() {
+    chrome.tabs.executeScript(null, {file: 'play_video.js'});
+    });
+
 }
 
 
-function mainFunc() {
+async function clickFunc(tab) {
 
     console.log("Executing main function..");
-    vids = getHomepage();
+    getHomepage(tab);
+    await sleep(2*1000);
+    beginVideoCollection(tab);
+    
+    //console.log(vids.slice());
+    //console.log(vids.length);
+    
+    //for (i = 0; i < vids.length; i++) {
+        //window.location.replace(vids[i]);
+        //playVideo(tab, vids[i]);
+        //await sleep(5*1000);
+    //}
+}
+
+
+async function playAllVideos(vids, seconds2watch) {
     for (i = 0; i < vids.length; i++) {
-            window.location.replace(vids[i]);
-            //await sleep(5*1000);
+        playVideo(vids[i]);
+        await sleep(seconds2watch*1000);
     }
 }
+
+function urlToID(url){
+    var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    var match = url.match(regExp);
+    return (match&&match[7].length==11)? match[7] : false;
+}
+
+async function getSlant(video_url) {
+   var v_id = urlToID(video_url);
+   const userAction = async () => {
+   const resp = await fetch('https://rostam.idav.ucdavis.edu/noyce/getSlant/' + String(v_id));
+   const resp_js = await resp.json();
+   var score = resp_js.slant;
+   return score;
+  }
+}
+
+
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+    var videos = msg;
+    sendResponse("Got videos from injected script...");
+    console.log(videos);
+    playAllVideos(videos, 5);
+    //for (i = 0; i < videos.length; i++) {
+    //    console.log(getSlant(videos[i]));
+    //}
+
+});
+
+
