@@ -4,6 +4,7 @@
 "name": "NoyceIntervention",
 "version": "1.0.0",
 "permissions": ["activeTab", "tabs", "*://*/*"],
+"web_accessible_resources": ["videos.json"],
 "background": {
 "scripts": ["background.js"]
 },

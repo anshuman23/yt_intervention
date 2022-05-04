@@ -52,11 +52,43 @@ function urlToID(url){
 async function getSlant(video_url) {
    var v_id = urlToID(video_url);
    console.log(v_id);
-   // Change the API later to rostam or use the file containing videos->slants
+   ////// Change the API later to rostam or use the file containing videos->slants //////
    let response = await fetch('https://csrng.net/csrng/csrng.php?min=0&max=1')
    return await response.json();
 }
 
+async function readFile(file_url) {
+    let response = await fetch(file_url);
+    return await response.json();
+}
+
+
+function getTargets(ideology_bin) {
+    var targets = [];
+    switch(ideology_bin) {
+        case 'Right':
+            targets.push(0.6);
+            targets.push(1.0);
+            break;
+        case 'Left':
+            targets.push(-0.6);
+            targets.push(-1.0);
+            break;
+        case 'Center':
+            targets.push(-0.2);
+            targets.push(0.2);
+            break;
+        case 'Center_Right':
+            targets.push(0.2);
+            targets.push(0.6);
+            break;
+        case 'Center_Left':
+            targets.push(-0.2);
+            targets.push(-0.6);
+            break;
+    }
+    return targets;
+}
 
 chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
     var videos = msg;
@@ -69,7 +101,7 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
     var actual_count = 0
     for (i = 0; i < videos.length; i++) {
         const js_resp = await getSlant(videos[i]);
-        // Add here ```var score = js_resp.slant``` and remove following line:
+        ////// Add here ```var score = js_resp.slant``` and remove following line: //////
         var score = js_resp[0].random;
         console.log(score);
         if (score >= 0.0 && score <= 1.0) {
@@ -81,18 +113,25 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
 
     mean_score = mean_score / actual_count;
     console.log(mean_score);
-    var epsilon = 0.1; //Set threshold according to your need
-    var time2watch4 = 5;
+    var time2watch4 = 5; //Seconds to watch each intervention video for
+    var user_choice = 'Center_Right';
 
-    if (Math.abs(mean_score - 0.0) > epsilon) {
-        // Read video to play from curated list here
-        var vid2play = 'https://www.youtube.com/watch?v=eB2OpurOFhk';
-        playVideo(sender.tab, vid2play);
-        await sleep(time2watch4 * 1000);
+    const file_link = chrome.runtime.getURL('./videos.json');
+    console.log(file_link);
+    const file_js = await readFile(file_link);
+    var all_videos = file_js[user_choice];
+    console.log(all_videos.length);
 
-    } else {
+    var targets = getTargets(user_choice);
+
+    if (mean_score >= targets[0] && mean_score <= targets[1]) {
         getHomepage(sender.tab);
         return;
+    } else {
+        // Read video to play from curated list here
+        var vid2play = 'https://www.youtube.com/watch?v=' + all_videos[Math.floor(Math.random()*all_videos.length)];
+        playVideo(sender.tab, vid2play);
+        await sleep(time2watch4 * 1000);
     }
 
     clickFunc(sender.tab);
