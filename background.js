@@ -158,8 +158,10 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
 
     if (mean_score >= targets[0] && mean_score <= targets[1]) {
         getHomepage(sender.tab);
-        toggle = false;
-        // TODO: send message to popup script to turn toggle off 
+        console.log("Intervention Complete...");
+        toggle = false; // Intervention complete, set global toggle state variable to off
+        // Send message to popup script to turn toggle off at the UI side
+        chrome.runtime.sendMessage({msg: "TOGGLE_OFF"});
         return;
     } else {
         // Read video to play from curated list for that ideology here
