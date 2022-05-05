@@ -32,9 +32,24 @@ slider.oninput = function() {
     output.innerHTML = ideo_text;
 }
 
+
+document.addEventListener('DOMContentLoaded', function () {
+    var checkbox = document.querySelector('input[type="checkbox"]');
+    chrome.storage.local.get('enabled', function (result) {
+        if (result.enabled != null) {
+            checkbox.checked = result.enabled;
+        }
+    });
+});
+
+
 document.querySelector("input[type=checkbox]").addEventListener("change", function() {
     console.log("Toggle: " + this.checked);
     console.log("Ideology: " + output.innerHTML);
+
+    chrome.storage.local.set({ 'enabled': this.checked }, function () {
+        console.log("toggle state stored locally");
+    });
 
     msg_obj = {"toggle_state": this.checked, "ideology": output.innerHTML};
     chrome.runtime.sendMessage(msg_obj, function(response) {
@@ -43,3 +58,4 @@ document.querySelector("input[type=checkbox]").addEventListener("change", functi
     });
 
 }, false);
+

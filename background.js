@@ -4,7 +4,7 @@ chrome.tabs.onCreated.addListener(clickFunc);
 
 let user_choice = ''; //global variable for user's choice of ideology
 let time2watch4 = 5; //global variable indicating seconds to watch each intervention video for
-
+let toggle = false; //global variable indicating whether user has turned on intervention or not
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -107,15 +107,21 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
         console.log(msg);
         sendResponse("Got the signal to either start/finish..");
         if (msg.toggle_state == false) { // Nothing to do here as intervention turned off by user
-            getHomepage({"id": null}); //Should do something here that is similar to getHomepage but just exits somehow
+            toggle = false;
             return;
        }
 
+       toggle = true;
        var new_tab_url = "http://www.youtube.com/";
        chrome.tabs.create({ url: new_tab_url });
        user_choice = msg.ideology;
        console.log(user_choice);
        return;
+    }
+
+    // If intervention turned off by user midway through video collection operations, we have to stop
+    if (toggle == false) {
+        return;
     }
 
     // If message received is from an injected content script giving us homepage videos to estimate mean slant
@@ -152,6 +158,8 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
 
     if (mean_score >= targets[0] && mean_score <= targets[1]) {
         getHomepage(sender.tab);
+        toggle = false;
+        // TODO: send message to popup script to turn toggle off 
         return;
     } else {
         // Read video to play from curated list for that ideology here

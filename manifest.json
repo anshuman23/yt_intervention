@@ -3,7 +3,7 @@
 "manifest_version": 2,
 "name": "YTIntervention",
 "version": "1.0.0",
-"permissions": ["activeTab", "tabs", "*://*/*"],
+"permissions": ["activeTab", "tabs", "*://*/*", "storage"],
 "web_accessible_resources": ["videos.json"],
 "background": {
 "scripts": ["background.js"]
