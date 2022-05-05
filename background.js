@@ -1,4 +1,10 @@
-chrome.browserAction.onClicked.addListener(clickFunc);
+//chrome.browserAction.onClicked.addListener(clickFunc);
+
+chrome.tabs.onCreated.addListener(clickFunc);
+
+let user_choice = ''; //global variable for user's choice of ideology
+let time2watch4 = 5; //global variable indicating seconds to watch each intervention video for
+
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -28,6 +34,10 @@ function playVideo(tab, vid_url) {
 
 async function clickFunc(tab) {
     console.log("Executing main function..");
+    if (!(tab.url.startsWith('https://www.youtube.com/') || tab.pendingUrl.startsWith('http://www.youtube.com/'))) { //Nothing to do, we are not on YouTube
+        return;
+    }
+
     getHomepage(tab);
     await sleep(2*1000);
     beginVideoCollection(tab);
@@ -78,11 +88,11 @@ function getTargets(ideology_bin) {
             targets.push(-0.2);
             targets.push(0.2);
             break;
-        case 'Center_Right':
+        case 'Center-Right':
             targets.push(0.2);
             targets.push(0.6);
             break;
-        case 'Center_Left':
+        case 'Center-Left':
             targets.push(-0.2);
             targets.push(-0.6);
             break;
@@ -90,7 +100,25 @@ function getTargets(ideology_bin) {
     return targets;
 }
 
+
 chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
+    // If message received is from popup script to start the intervention
+    if (!(Array.isArray(msg))) {
+        console.log(msg);
+        sendResponse("Got the signal to either start/finish..");
+        if (msg.toggle_state == false) { // Nothing to do here as intervention turned off by user
+            getHomepage({"id": null}); //Should do something here that is similar to getHomepage but just exits somehow
+            return;
+       }
+
+       var new_tab_url = "http://www.youtube.com/";
+       chrome.tabs.create({ url: new_tab_url });
+       user_choice = msg.ideology;
+       console.log(user_choice);
+       return;
+    }
+
+    // If message received is from an injected content script giving us homepage videos to estimate mean slant
     var videos = msg;
     sendResponse("Got videos from injected script...");
     console.log(videos);
@@ -113,8 +141,6 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
 
     mean_score = mean_score / actual_count;
     console.log(mean_score);
-    var time2watch4 = 5; //Seconds to watch each intervention video for
-    var user_choice = 'Center_Right';
 
     const file_link = chrome.runtime.getURL('./videos.json');
     console.log(file_link);
@@ -128,7 +154,7 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
         getHomepage(sender.tab);
         return;
     } else {
-        // Read video to play from curated list here
+        // Read video to play from curated list for that ideology here
         var vid2play = 'https://www.youtube.com/watch?v=' + all_videos[Math.floor(Math.random()*all_videos.length)];
         playVideo(sender.tab, vid2play);
         await sleep(time2watch4 * 1000);
