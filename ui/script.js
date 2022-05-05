@@ -64,9 +64,6 @@ chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         console.log(request);
         if (request.msg == "TOGGLE_OFF") {
-            chrome.storage.local.set({ 'enabled': false }, function () {
-                console.log("toggle state stored locally");
-            });
             document.getElementById("toggle_switch").checked = false;
         }
     }

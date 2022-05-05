@@ -1,5 +1,3 @@
-//chrome.browserAction.onClicked.addListener(clickFunc);
-
 chrome.tabs.onCreated.addListener(clickFunc);
 
 let user_choice = ''; //global variable for user's choice of ideology
@@ -160,6 +158,9 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
         getHomepage(sender.tab);
         console.log("Intervention Complete...");
         toggle = false; // Intervention complete, set global toggle state variable to off
+        chrome.storage.local.set({ 'enabled': false }, function () { //Update local storage as well
+                console.log("Toggle state locally stored via background script...");
+        });
         // Send message to popup script to turn toggle off at the UI side
         chrome.runtime.sendMessage({msg: "TOGGLE_OFF"});
         return;
