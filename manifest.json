@@ -9,7 +9,7 @@
 "scripts": ["background.js"]
 },
 "browser_action": {
-"default_icon": "N.png",
+"default_icon": "X.png",
 "default_popup": "ui/index.html",
 "default_title": "YT Intervention Interface"
 }
