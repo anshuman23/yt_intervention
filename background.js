@@ -145,6 +145,9 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
 
     mean_score = mean_score / actual_count;
     console.log(mean_score);
+    chrome.storage.local.set({ 'mean_slant': mean_score.toFixed(2) }, function () {
+        console.log("Latest slant score stored locally...");
+    });
 
     const file_link = chrome.runtime.getURL('./videos.json');
     console.log(file_link);
@@ -161,6 +164,7 @@ chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
         chrome.storage.local.set({ 'enabled': false }, function () { //Update local storage as well
                 console.log("Toggle state locally stored via background script...");
         });
+
         // Send message to popup script to turn toggle off at the UI side
         chrome.runtime.sendMessage({msg: "TOGGLE_OFF"});
         return;

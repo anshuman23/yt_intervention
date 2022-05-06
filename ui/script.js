@@ -40,6 +40,15 @@ document.addEventListener('DOMContentLoaded', function () {
             checkbox.checked = result.enabled;
         }
     });
+
+    chrome.storage.local.get('mean_slant', function (result) {
+        if (result.mean_slant != null) {
+            let score_val = result.mean_slant;
+            console.log(score_val);
+            document.getElementById("slant_field").textContent = 'Latest Homepage Slant: ' + score_val;
+        }
+    });
+
 });
 
 
@@ -63,7 +72,7 @@ document.querySelector("input[type=checkbox]").addEventListener("change", functi
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         console.log(request);
-        if (request.msg == "TOGGLE_OFF") {
+        if (request.msg === "TOGGLE_OFF") {
             document.getElementById("toggle_switch").checked = false;
         }
     }
